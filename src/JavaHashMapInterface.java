@@ -12,7 +12,7 @@ public interface JavaHashMapInterface<K, V> {
 	boolean isEmpty();
 	Collection keySet();
 	V put(K key, V val);
-	int size();
+	int capacity();
 	Collection values();
 	V remove(K key);
 	void putAll(Map m);

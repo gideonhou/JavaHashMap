@@ -10,7 +10,7 @@ import java.util.Set;
 
 public class JavaHashMap<K, V> implements JavaHashMapInterface<K, V> {
 
-	private int capacity = 10; // maximum size of hashmap
+	private int capacity; // maximum size of hashmap
 	
 	private double loadFactor = .7; // percentage of size where hashmap must be resized  
 	
@@ -22,8 +22,8 @@ public class JavaHashMap<K, V> implements JavaHashMapInterface<K, V> {
 	/**
 	 * Constructor
 	 */
-	@SuppressWarnings("unchecked")
 	public JavaHashMap() {
+		this.capacity = 10;
 		this.numElements = 0;
 		this.table = new ArrayList<JavaHashEntry>(Collections.nCopies(capacity, null)); // initialize an arraylist of size capacity with all nulls as values
 		
@@ -96,12 +96,12 @@ public class JavaHashMap<K, V> implements JavaHashMapInterface<K, V> {
 	 */
 	@Override
 	public V get(K key) {
-		int hashcode = key.hashCode();
+		int hashcode = key.hashCode() % this.capacity;
 		
 		int counter = 0;
 		while(counter < this.capacity) {
 			JavaHashEntry entry = this.table.get(hashcode);
-			if(entry.getKey().equals(key)) return entry.getValue();
+			if(entry != null && entry.getKey().equals(key)) return entry.getValue();
 			else {
 				hashcode = linearprobe(hashcode);
 				counter++;
@@ -117,7 +117,8 @@ public class JavaHashMap<K, V> implements JavaHashMapInterface<K, V> {
 	 */
 	@Override
 	public boolean isEmpty() {
-		return true ? false : this.numElements == 0;
+		if (this.numElements == 0) return true;
+		else return false;
 	}
 
 	/**
@@ -145,7 +146,7 @@ public class JavaHashMap<K, V> implements JavaHashMapInterface<K, V> {
 		
 		int counter = 0;
 		while(counter < this.capacity) {
-			if(this.table.get(hashcode) != null) {
+			if(this.table.get(hashcode) == null) {
 				this.table.set(hashcode, toInsert);
 				this.numElements++;
 				break;
@@ -155,23 +156,53 @@ public class JavaHashMap<K, V> implements JavaHashMapInterface<K, V> {
 			}
 		}
 		
-		if(this.numElements / this.capacity > this.loadFactor) this.resize();
+		if( ((double)this.numElements / (double)this.capacity) >= this.loadFactor) this.resize();
 		
 		return toInsert.getValue();
 	}
 
 	/**
 	 * this function doubles the size of the map when the load factor is exceeded
+	 * 
+	 * O(this.capacity)
 	 */
 	private void resize() {
-		ArrayList
+		int newCapacity = this.capacity * 2;
+		ArrayList<JavaHashEntry> newTable = new ArrayList<JavaHashEntry>(Collections.nCopies(newCapacity * 2, null)); // initialize an arraylist of size capacity with all nulls as values
+		
+		for(int i = 0; i < this.capacity; i++) { // iterate through entire table, putting non null entries into new table
+			JavaHashEntry toPut = this.table.get(i);
+			if(toPut != null) {
+				int hashcode = toPut.getKey().hashCode() % newCapacity;
+				int counter = 0;
+				while(counter < newCapacity) {
+					if(newTable.get(hashcode) == null) {
+						newTable.set(hashcode, toPut);
+						break;
+					} else {
+						hashcode = linearprobe(hashcode);
+						counter++;
+					}
+				}
+			}
+		}
+		this.table = newTable;
+		this.capacity = newCapacity;
+		
+		return;
 	}
 	
 	/**
 	 * Returns the size of the map – Number of key-value mappings
+	 * 
+	 * O(1)
 	 */
 	@Override
-	public int size() {
+	public int capacity() {
+		return this.capacity;
+	}
+	
+	public int numElements() {
 		return this.numElements;
 	}
 
@@ -189,11 +220,30 @@ public class JavaHashMap<K, V> implements JavaHashMapInterface<K, V> {
 	}
 
 	/**
-	 * It removes the key-value pair for the specified key. 
+	 * It removes the key-value pair for the specified key.
+	 * 
+	 * O(1) at best. O(this.capacity) at worst 
 	 */
 	@Override
 	public V remove(K key) {
-		// TODO Auto-generated method stub
+		//if(!this.containsKey(key)) return null;
+		
+		int hashcode = key.hashCode() % this.capacity;
+		int counter = 0;
+		V returnValue;
+		
+		while(counter < this.capacity) {
+			JavaHashEntry toPut = this.table.get(hashcode);
+			if(toPut != null && toPut.getKey().equals(key)) {
+				returnValue = toPut.getValue();
+				this.table.set(hashcode, null);
+				this.numElements--;
+				return returnValue;
+			} else {
+				hashcode = linearprobe(hashcode);
+				counter++;
+			}
+		}
 		return null;
 	}
 
