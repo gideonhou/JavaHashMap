@@ -10,7 +10,7 @@ public interface JavaHashMapInterface<K, V> {
 	boolean containValue(V val);
 	V get(K key);
 	boolean isEmpty();
-	Set keySet();
+	Collection keySet();
 	V put(K key, V val);
 	int size();
 	Collection values();
